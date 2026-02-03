@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+    <div style="display:flex; align-items:center; margin-bottom:20px; position:relative; padding-top:10px;">
+
+    {% if request.user.is_authenticated and request.user.username == profile.user.username %}
+        <!-- ✅ HOME ICON -->
+        <a href="{% url 'feed' %}"
+           title="Home"
+           style="position:absolute; top:0; right:0; font-size:22px; text-decoration:none; color:#3897f0; margin-left:10px;">
+           🏠
+        </a>
+
+        <!-- ✅ SEARCH ICON -->
+        <a href="{% url 'search_user' %}"
+           title="Search"
+           style="position:absolute; top:0; right:35px; font-size:22px; text-decoration:none; color:#3897f0;">
+           🔍
+        </a>
+    {% endif %}
+
+    
+
+    <!-- Profile Avatar -->
+    <div>
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="Avatar" width="150" style="border-radius:50%;">
+        {% else %}
+            <img src="https://via.placeholder.com/150" alt="Avatar" style="border-radius:50%;">
+        {% endif %}
+    </div>
+
+    <!-- Profile Info -->
+    <div style="margin-left:20px;">
+        <h2>{{ profile.user.username }}</h2>
+        <div style="display:flex; gap:30px; margin-bottom:10px; text-align:center;">
+    
+    <div>
+        <div style="font-weight:bold; font-size:18px;">
+            {{ post_count }}
+        </div>
+        <div style="font-size:16px; color:black;">
+            posts
+        </div>
+    </div>
+
+    <div>
+        <div style="font-weight:bold; font-size:18px;">
+            {{ followers_count }}
+        </div>
+        <div style="font-size:16px; color:black;">
+            followers
+        </div>
+    </div>
+
+    <div>
+        <div style="font-weight:bold; font-size:18px;">
+            {{ following_count }}
+        </div>
+        <div style="font-size:16px; color:black;">
+            following
+        </div>
+    </div>
+
+</div>
+        <p>{{ profile.bio }}</p>
+
+        <!-- ✅ Edit Profile + Add Post link -->
+        {% if request.user.is_authenticated and request.user.username == profile.user.username %}
+        <div style="display:flex; gap:8px;">
+            <a href="{% url 'edit_profile' %}" 
+               style="align-items:center; padding:6px 12px; background-color:#0095f6; color:white; text-decoration:none; border-radius:5px; font-size:14px; font-weight:500; display:flex; align-items:center; justify-content:center;">
+               Edit Profile
+            </a>
+
+            <!-- ✅ Separate Add Post Page -->
+            <a href="{% url 'add_post' %}" 
+               style=" align-items:center; padding:6px 12px; background-color:#0095f6; color:white; border-radius:5px; text-decoration:none; font-size:14px; font-weight:500; display:flex; justify-content:center;">
+               ➕ Add Post
+            </a>
+
+            <!-- Logout Button -->
+            <form method="post" action="{% url 'logout' %}" style="display:flex;">
+                {% csrf_token %}
+                <button type="submit" style= " align-items:center; padding:6px 12px; background-color:#ef5350; color:white; border:none; border-radius:5px; cursor:pointer; font-size:14px;  font-weight:500; display:flex; justify-content:center;">
+                    Logout
+                </button>
+            </form>
+        </div>
+        {% else %}
+           
+            {% if profile in request.user.profile.following.all %}
+
+           {# {% if profile.user in request.user.profile.following.all %} #}
+                <a href="{% url 'follow_toggle' profile.user.id %}" 
+                   style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">
+                   Unfollow
+                </a>
+            {% else %}
+                <a href="{% url 'follow_toggle' profile.user.id %}" 
+                   style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">
+                   Follow
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<!-- Posts Grid -->
+<!-- Posts Grid -->
+<h3>Posts</h3>
+
+<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; padding:0;  margin:0;">
+    {% for post in user_posts %}
+        {% if post.image %}
+        
+        <div style="position:relative; width:100%; padding-top:100%; overflow:hidden; box-sizing:border-box;">
+
+            <!-- Post Image -->
+            <img src="{{ post.image.url }}"
+                 style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;  display:block;">
+
+
+            <!-- ❤️ Like & 💬 Comment Icons OVERLAY -->
+            <div style="
+                position:absolute; 
+                bottom:5px; 
+                left:5px; 
+                display:flex; 
+                gap:10px;
+                background: rgba(0,0,0,0.3);
+                padding:3px 6px;
+                border-radius:8px;
+            ">
+                <!-- ❤️ Like Button -->
+                <form class="like-form" data-post-id="{{ post.id }}" style="display:inline;">
+                    {% csrf_token %}
+                    {% if user_likes_post|dict_get:post.id %}
+                        <button type="submit" style="border:none; background:none; color:white; font-size:18px;">
+                            ❤️ {{ post.likes.count }} 
+                        </button>
+                    {% else %}
+                        <button type="submit" style="border:none; background:none; color:white; font-size:18px;"> 
+                            🤍 {{ post.likes.count }} 
+                    </button>    
+                    {% endif %}
+                </form>
+
+                <!-- 💬 Comment Icon -->
+                <a href="{% url 'post_comments' post.id %}" 
+                   style="color:white; font-size:18px; text-decoration:none;">
+                   💬
+                </a>
+            </div>
+
+        </div>
+
+        {% endif %}
+    {% empty %}
+        <p>No posts yet.</p>
+    {% endfor %}
+</div>
+
+
+<!-- ✅ AJAX for Like and Comment -->
+<script>
+    // Like/Unlike AJAX
+    document.querySelectorAll('.like-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const postId = this.dataset.postId;
+            const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch("{% url 'like_unlike_post' 0 %}".replace('0', postId), {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(res => res.json())
+            .then(data => {
+                const btn = form.querySelector('button');
+                btn.innerHTML = data.liked ? `❤️ ${data.likes_count}` : `🤍 ${data.likes_count}`;
+                btn.style.color = data.liked ? 'red' : '';
+            });
+        });
+    });
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,122 @@
+{% load custom_tags %}
+
+<h2>User Feed</h2>
+
+<a href="{% url 'add_post' %}">Create New Post</a> |
+<a href="{% url 'profile' %}">My Profile</a>
+
+<hr>
+
+{% for post in posts %}
+    <div>
+        <strong>{{ post.author.username }}</strong><br>
+        {% if post.image %}
+            <img src="{{ post.image.url }}" width="200"><br>
+        {% endif %}
+        {{ post.caption }}<br>
+        <small>{{ post.created_at }}</small>
+    <form class="like-form" method="POST"
+      action="{% url 'like_unlike_post' post.id %}"
+      data-post-id="{{ post.id }}">
+
+    {% csrf_token %}
+
+    <button type="submit"
+            name="action"
+            value="like"
+            class="like-btn"
+            {% if post|is_liked:user %}
+            style="background-color:green;color:white"
+            {% endif %}>
+        Like
+    </button>
+
+    <button type="submit"
+            name="action"
+            value="unlike"
+            class="unlike-btn"
+            {% if not post|is_liked:user %}
+            style="background-color:red;color:white"
+            {% endif %}>
+        Unlike
+    </button>
+
+    Likes: <span class="like-count">{{ post.likes.all|length }}</span>
+
+</form>
+
+        <!-- Comments list -->
+    <div class="comments">
+      {% for comment in post.comments.all %}
+        <p><b>{{ comment.user.username }}</b>: {{ comment.text }} <small>• {{ comment.created_at }}</small></p>
+      {% empty %}
+        <p>No comments yet</p>
+      {% endfor %}
+    </div>
+
+    <!-- Add comment form -->
+    <form method="POST" action="{% url 'add_comment' post.id %}">
+      {% csrf_token %}
+      <input type="text" name="comment" placeholder="Add a comment..." required>
+      <button type="submit">Post</button>
+    </form>
+    </div>
+    <hr>
+{% empty %}
+    <p>No posts yet.</p>
+{% endfor %}
+
+<script>
+document.querySelectorAll('.like-form').forEach(form => {
+
+    const likeBtn = form.querySelector('.like-btn');
+    const unlikeBtn = form.querySelector('.unlike-btn');
+
+    function sendRequest(action) {
+        const postId = form.dataset.postId;
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch("{% url 'like_unlike_post' 0 %}".replace('0', postId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `action=${action}`
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            // update count
+            form.querySelector('.like-count').innerText = data.likes_count;
+
+            if (data.liked) {
+                likeBtn.style.backgroundColor = 'green';
+                likeBtn.style.color = 'white';
+
+                unlikeBtn.style.backgroundColor = '';
+                unlikeBtn.style.color = '';
+            } else {
+                unlikeBtn.style.backgroundColor = 'red';
+                unlikeBtn.style.color = 'white';
+
+                likeBtn.style.backgroundColor = '';
+                likeBtn.style.color = '';
+            }
+        });
+    }
+
+    likeBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        sendRequest('like');
+    });
+
+    unlikeBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        sendRequest('unlike');
+    });
+
+});
+</script>
+

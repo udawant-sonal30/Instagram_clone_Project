@@ -1,0 +1,19 @@
+<h2>Edit Profile</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Email:</label><br>
+    {{ form.email }}<br><br>
+
+    <label>Bio:</label><br>
+    {{ form.bio }}<br><br>
+
+    <label>Avatar (Profile Photo):</label><br>
+    {% if user.profile.avatar %}
+        <img src="{{ user.profile.avatar.url }}" width="100"><br>
+    {% endif %}
+    {{ form.avatar }}<br><br>
+
+    <button type="submit">Save Changes</button>
+</form>

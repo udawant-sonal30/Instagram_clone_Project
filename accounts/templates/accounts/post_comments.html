@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Comments</h2>
+<!-- Thumbnail preview of post -->
+<img src="{{ post.image.url }}" 
+     style="width:80px; height:80px; object-fit:cover; border-radius:5px; margin-bottom:10px;">
+
+<!-- Show Post Image 
+<img src="{{ post.image.url }}" 
+     style="width:100%; max-width:450px; border-radius:10px; margin-bottom:10px;">
+ -->
+<hr>
+
+<!-- Existing Comments -->
+<h3>All Comments</h3>
+{% for c in comments %}
+    <p><b>{{ c.user.username }}:</b> {{ c.text }}</p>
+{% empty %}
+    <p>No comments yet.</p>
+{% endfor %}
+
+<hr>
+
+<!-- Add New Comment -->
+<form method="POST">
+    {% csrf_token %}
+    <input type="text" name="comment" placeholder="Write a comment..." required
+           style="width:80%; padding:8px;">
+    <button type="submit" style="padding:8px 15px;">Post</button>
+</form>
+
+<br>
+
+<!-- Back Button -->
+<a href="javascript:history.back()" style="color:#3897f0;">⬅ Back</a>
+<!-- ✅ AJAX Script -->
+<script>
+document.getElementById('comment-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const postId = this.dataset.postId;
+    const text = this.querySelector('[name=comment]').value;
+    const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch("{% url 'add_comment' 0 %}".replace('0', postId), {
+        method:'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With':'XMLHttpRequest',
+            'Content-Type':'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({'comment': text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        // Add new comment to list
+        const list = document.getElementById('comment-list');
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${data.username}:</b> ${data.text}`;
+        list.appendChild(li);
+
+        // Clear input
+        this.reset();
+    })
+    .catch(err => console.error(err));
+});
+</script>
+{% endblock %}

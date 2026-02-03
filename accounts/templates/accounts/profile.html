@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div style="display:flex; align-items:center; margin-bottom:20px;">
+    <!-- Profile Avatar -->
+    <div>
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="Avatar" width="150" style="border-radius:50%;">
+        {% else %}
+            <img src="https://via.placeholder.com/150" alt="Avatar" style="border-radius:50%;">
+        {% endif %}
+    </div>
+
+    <!-- Profile Info -->
+    <div style="margin-left:20px;">
+        <h2>{{ profile.user.username }}</h2>
+        <div style="display:flex; gap:15px; margin-bottom:10px;">
+            <p><b>{{ post_count }}</b> posts</p>
+            <p><b>{{ followers_count }}</b> followers</p>
+            <p><b>{{ following_count }}</b> following</p>
+        </div>
+        <p>{{ profile.bio }}</p>
+
+        <!-- ✅ FIXED CONDITION -->
+        {% if request.user.is_authenticated and request.user.username == profile.user.username %}
+            <a href="{% url 'edit_profile' %}" style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">Edit Profile</a>
+        <a href="{% url 'add_post' %}" 
+   style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">
+   Add Post
+</a>    
+        
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" style="padding:5px 10px; background-color:#ef5350; color:white; border:none;">Logout</button>
+            </form>
+        {% else %}
+            {% if profile.user in request.user.profile.following.all %}
+                <a href="{% url 'follow_toggle' profile.user.id %}" style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">Unfollow</a>
+            {% else %}
+                <a href="{% url 'follow_toggle' profile.user.id %}" style="padding:5px 10px; background-color:#3897f0; color:white; text-decoration:none;">Follow</a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<!-- Posts Grid -->
+<h3>Posts</h3>
+<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+    {% for post in user_posts %}
+        {% if post.image %}
+            <div style="position:relative; width:100%; padding-top:100%; overflow:hidden; border:1px solid #ccc; border-radius:10px;">
+                <img src="{{ post.image.url }}" 
+                     alt="Post" 
+                     style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:10px;">
+            </div>
+
+            <!-- Like / Unlike Button -->
+            <form method="POST" action="{% url 'like_unlike_post' post.id %}" style="display:inline;">
+                {% csrf_token %}
+                {% if user_likes_post|dict_get:post.id %}
+                    <button type="submit" style="border:none; background:none; cursor:pointer; color:red;">
+                        ❤️ Unlike ({{ post.likes.count }})
+                    </button>
+                {% else %}
+                    <button type="submit" style="border:none; background:none; cursor:pointer;">
+                        🤍 Like ({{ post.likes.count }})
+                    </button>
+                {% endif %}
+            </form>
+
+            <!-- Add Comment Form -->
+            <form method="POST" action="{% url 'add_comment' post.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="text" name="comment" placeholder="Add a comment..." required>
+                <button type="submit">Comment</button>
+            </form>
+
+            <!-- Display Comments -->
+            <div style="margin-top:5px;">
+                {% for comment in post.comments.all %}
+                    <p><b>{{ comment.user.username }}:</b> {{ comment.text }}</p>
+                {% empty %}
+                    <p>No comments yet.</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% empty %}
+        <p>No posts yet.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

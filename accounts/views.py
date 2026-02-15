@@ -160,11 +160,11 @@ def view_profile(request, username):
     followers_count = profile.followers.count()
     following_count = profile.following.count()
     # Post count for this user
-    post_count = profile.user.posts.count()  # Post model मध्ये related_name='posts' असल्यास
+    post_count = profile.user.posts.count()  
     user_posts =  user_posts = Post.objects.filter(author=profile.user).order_by('-created_at')
 
     # Add Post form
-    if request.user == profile.user:  # फक्त logged-in user साठी
+    if request.user == profile.user: 
         post_form = PostForm(request.POST or None, request.FILES or None)
         if request.method == 'POST' and post_form.is_valid():
             new_post = post_form.save(commit=False)

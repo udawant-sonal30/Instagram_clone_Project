@@ -18,21 +18,21 @@ class SignUpForm(UserCreationForm):
             "and not too common."
         )
 class EditProfileForm(forms.ModelForm):
-    email = forms.EmailField(required=True)  # User चा email update करू देणार
+    email = forms.EmailField(required=True)  
 
     class Meta:
         model = Profile
         fields = ['bio', 'avatar']  # Profile fields
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user')  # current user मिळवण्यासाठी
+        user = kwargs.pop('user') 
         super(EditProfileForm, self).__init__(*args, **kwargs)
-        self.fields['email'].initial = user.email  # current email form मध्ये दाखवतो
+        self.fields['email'].initial = user.email 
 
     def save(self, commit=True):
         profile = super(EditProfileForm, self).save(commit=False)
         user = profile.user
-        user.email = self.cleaned_data['email']  # email update करतो
+        user.email = self.cleaned_data['email'] 
 
         if commit:
             user.save()
